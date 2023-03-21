@@ -125,26 +125,11 @@ public class StableDiffusionText2Material : StableDiffusionText2Image
         // Set the model parameters
         yield return sdc.SetModelAsync(modelsList[selectedModel]);
 
-        // Generate the image
-        SDResponseTxt2Img sDResponseTxt2Img;
-        using (UnityWebRequest request = new UnityWebRequest(sdc.settings.StableDiffusionServerURL + sdc.settings.TextToImageAPI, "POST"))
+        UnityWebRequest.Result requestResult = GenerateImage(out SDResponseTxt2Img sDResponseTxt2Img);
+        if (requestResult is not UnityWebRequest.Result.Success)
         {
-            if (selectedSampler >= 0 && selectedSampler < samplersList.Length)
-                sDParamsInTxt2Img.sampler_name = samplersList[selectedSampler];
-
-            request.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings, JsonUtility.ToJson(sDParamsInTxt2Img));
-            request.SendWebRequest();
-
-            ShowProgressAndWaitUntilDone(request);
-
-            if (request.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log(request.error);
-                yield break;
-            }
-            Debug.Log(request.result);
-
-            sDResponseTxt2Img = JsonUtility.FromJson<SDResponseTxt2Img>(request.downloadHandler.text);
+            Debug.Log(requestResult);
+            yield break;
         }
 
         // If no image, there was probably an error so abort
