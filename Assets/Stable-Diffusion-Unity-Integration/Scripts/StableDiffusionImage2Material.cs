@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Collections.Generic;
 
 #if UNITY_EDITOR
 
@@ -154,11 +155,7 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
             if (!applyRecursively)
                 return null;
 
-            MeshRenderer[] mrs = FindInChildrenAll<MeshRenderer>(this.gameObject);
-            if (mrs == null || mrs.Length == 0)
-                return null;
-
-            mr = mrs[0];
+            mr = gameObject.FindComponentInDescendants<MeshRenderer>();
         }
 
         return mr;
@@ -388,7 +385,7 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
             // Apply the material to childrens if required
             if (applyRecursively)
             {
-                MeshRenderer[] mrs = FindInChildrenAll<MeshRenderer>(this.gameObject);
+                List<MeshRenderer> mrs = gameObject.FindComponentsInDescendants<MeshRenderer>();
                 foreach (MeshRenderer m in mrs)
                     if (m != mr)
                     {
@@ -484,7 +481,7 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
         // Apply recursively if required
         if (applyRecursively)
         {
-            MeshRenderer[] mrs = FindInChildrenAll<MeshRenderer>(this.gameObject);
+            List<MeshRenderer> mrs = gameObject.FindComponentsInDescendants<MeshRenderer>();
             foreach (MeshRenderer m in mrs)
                 if (m != mr)
                 {

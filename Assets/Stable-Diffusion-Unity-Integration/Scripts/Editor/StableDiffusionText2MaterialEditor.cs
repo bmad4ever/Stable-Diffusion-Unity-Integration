@@ -19,7 +19,9 @@ public class StableDiffusionText2MaterialEditor : Editor
 
         // Draw the drop-down list for the Models list
         myComponent.selectedModel = EditorGUILayout.Popup("Model", myComponent.selectedModel, myComponent.modelsList);
-        
+
+        EditorGUILayout.LongField("Generated Seed", myComponent.generatedSeed);
+
         // Apply the changes to the serialized object
         serializedObject.ApplyModifiedProperties();
 

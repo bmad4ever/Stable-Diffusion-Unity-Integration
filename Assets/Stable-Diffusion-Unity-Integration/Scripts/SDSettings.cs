@@ -98,7 +98,7 @@ public class SDParamsInTxt2Img
     public float s_tmin = 0;
     public float s_noise = 1;
     public bool override_settings_restore_afterwards = true;
-    public string sampler_index = "Euler";
+    [HideInInspector] public string sampler_index = "Euler";
 }
 
 /// <summary>

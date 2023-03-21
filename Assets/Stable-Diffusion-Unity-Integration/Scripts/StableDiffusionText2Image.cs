@@ -23,7 +23,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     [ReadOnly]
     public string guid = "";
 
-    public SDParamsInTxt2Img sDParamsInTxt2Img;
+    public SDParamsInTxt2Img SD_Params;
 
     /// <summary>
     /// List of samplers to display as Drop-Down in the inspector
@@ -45,7 +45,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     [HideInInspector]
     public int selectedSampler = 0;
 
-    public long generatedSeed = -1;
+    [HideInInspector] public long generatedSeed = -1;
 
     protected string filename = "";
 
@@ -69,13 +69,16 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     [HideInInspector]
     public int selectedModel = 0;
 
+    // Internally keep tracking if we are currently generating (prevent re-entry)
+    protected bool generating = false;
+
 #if UNITY_EDITOR
     /// <summary>
     /// On Awake, fill the properties with default values from the selected settings.
     /// </summary>
     protected void Awake()
     {
-        if (sDParamsInTxt2Img.width < 0 || sDParamsInTxt2Img.height < 0)
+        if (SD_Params.width < 0 || SD_Params.height < 0)
         {
             StableDiffusionConfiguration sdc = FindObjectOfType<StableDiffusionConfiguration>();
             if (sdc != null)
@@ -83,32 +86,32 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
                 SDSettings settings = sdc.settings;
                 if (settings != null)
                 {
-                    sDParamsInTxt2Img.width = settings.width;
-                    sDParamsInTxt2Img.height = settings.height;
-                    sDParamsInTxt2Img.steps = settings.steps;
-                    sDParamsInTxt2Img.cfg_scale = settings.cfgScale;
-                    sDParamsInTxt2Img.seed = settings.seed;
+                    SD_Params.width = settings.width;
+                    SD_Params.height = settings.height;
+                    SD_Params.steps = settings.steps;
+                    SD_Params.cfg_scale = settings.cfgScale;
+                    SD_Params.seed = settings.seed;
                     return;
                 }
             }
 
-            sDParamsInTxt2Img.width = 512;
-            sDParamsInTxt2Img.height = 512;
-            sDParamsInTxt2Img.steps = 50;
-            sDParamsInTxt2Img.cfg_scale = 7;
-            sDParamsInTxt2Img.seed = -1;
+            SD_Params.width = 512;
+            SD_Params.height = 512;
+            SD_Params.steps = 50;
+            SD_Params.cfg_scale = 7;
+            SD_Params.seed = -1;
         }
     }
 
     protected void Start() => EditorUtility.ClearProgressBar();
 
-    protected void Update()
+    protected void OnValidate()
     {
         // Clamp image dimensions values between 128 and 2048 pixels
-        if (sDParamsInTxt2Img.width < 128) sDParamsInTxt2Img.width = 128;
-        if (sDParamsInTxt2Img.height < 128) sDParamsInTxt2Img.height = 128;
-        if (sDParamsInTxt2Img.width > 2048) sDParamsInTxt2Img.width = 2048;
-        if (sDParamsInTxt2Img.height > 2048) sDParamsInTxt2Img.height = 2048;
+        if (SD_Params.width < 128) SD_Params.width = 128;
+        if (SD_Params.height < 128) SD_Params.height = 128;
+        if (SD_Params.width > 2048) SD_Params.width = 2048;
+        if (SD_Params.height > 2048) SD_Params.height = 2048;
 
         // If not setup already, generate a GUID (Global Unique Identifier)
         if (guid == "")
@@ -116,16 +119,13 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     }
 #endif
 
-    // Internally keep tracking if we are currently generating (prevent re-entry)
-    protected bool generating = false;
-
     /// <summary>
     /// Callback function for the inspector Generate button.
     /// </summary>
     public virtual void Generate()
     {
         // Start generation asynchronously
-        if (!generating && !string.IsNullOrEmpty(sDParamsInTxt2Img.prompt))
+        if (!generating && !string.IsNullOrEmpty(SD_Params.prompt))
         {
             StartCoroutine(GenerateAsync());
         }
@@ -176,9 +176,9 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
         UnityWebRequest request = new UnityWebRequest(sdc.settings.StableDiffusionServerURL + sdc.settings.TextToImageAPI, "POST");
 
         if (selectedSampler >= 0 && selectedSampler < samplersList.Length)
-            sDParamsInTxt2Img.sampler_name = samplersList[selectedSampler];
+            SD_Params.sampler_name = samplersList[selectedSampler];
 
-        request.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings, JsonUtility.ToJson(sDParamsInTxt2Img));
+        request.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings, JsonUtility.ToJson(SD_Params));
         request.SendWebRequest();
 
         ShowProgressAndWaitUntilDone(request);
