@@ -122,7 +122,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     /// <summary>
     /// Callback function for the inspector Generate button.
     /// </summary>
-    public void Generate()
+    public virtual void Generate()
     {
         // Start generation asynchronously
         if (!generating && !string.IsNullOrEmpty(sDParamsInTxt2Img.prompt))
@@ -166,7 +166,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
         }
     }
 
-    private IEnumerator GenerateAsync()
+    protected virtual IEnumerator GenerateAsync()
     {
         generating = true;
 
@@ -255,7 +255,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     /// Load the texture into an Image or RawImage.
     /// </summary>
     /// <param name="texture">Texture to setup</param>
-    private void LoadIntoImage(Texture2D texture)
+    protected virtual void LoadIntoImage(Texture2D texture)
     {
         try
         {

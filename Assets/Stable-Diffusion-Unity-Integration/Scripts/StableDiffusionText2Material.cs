@@ -78,12 +78,12 @@ public class StableDiffusionText2Material : StableDiffusionText2Image
     /// </summary>
     protected new void Awake() => base.Awake();
 
-    private new void Start() => base.Start();
+    protected new void Start() => base.Start();
 
     /// <summary>
     /// Loop update
     /// </summary>
-    protected void Update()
+    protected new void Update()
     {
         base.Update();
 
@@ -113,22 +113,10 @@ public class StableDiffusionText2Material : StableDiffusionText2Image
 #endif
 
     /// <summary>
-    /// Callback function for the inspector Generate button.
-    /// </summary>
-    public new void Generate()
-    {
-        // Start generation asynchronously
-        if (!generating && !string.IsNullOrEmpty(sDParamsInTxt2Img.prompt))
-        {
-            StartCoroutine(GenerateAsync());
-        }
-    }
-
-    /// <summary>
     /// Request an image generation to the Stable Diffusion server, asynchronously.
     /// </summary>
     /// <returns></returns>
-    private IEnumerator GenerateAsync()
+    protected override IEnumerator GenerateAsync()
     {
         generating = true;
 
