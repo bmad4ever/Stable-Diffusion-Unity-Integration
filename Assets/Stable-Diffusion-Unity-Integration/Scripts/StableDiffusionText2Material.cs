@@ -15,8 +15,10 @@ using UnityEditor.SceneManagement;
 /// Component to help generate a Material Texture using Stable Diffusion.
 /// </summary>
 [ExecuteAlways]
-public class StableDiffusionText2Material : StableDiffusionText2Image//StableDiffusionGenerator
+public class StableDiffusionText2Material : StableDiffusionText2Image
 {
+    private const string StreamingAssetsFolder = "SDMaterials";
+
     [Range(1, 100)]
     public int tilingX = 1;
 
@@ -123,40 +125,6 @@ public class StableDiffusionText2Material : StableDiffusionText2Image//StableDif
     }
 
     /// <summary>
-    /// Setup the output path and filename for image generation
-    /// </summary>
-    private void SetupFolders()
-    {
-        // Get the configuration settings
-        if (sdc == null)
-            sdc = GameObject.FindObjectOfType<StableDiffusionConfiguration>();
-
-        try
-        {
-            // Determine output path
-            string root = Application.dataPath + sdc.settings.OutputFolder;
-            if (root == "" || !Directory.Exists(root))
-                root = Application.streamingAssetsPath;
-            string mat = Path.Combine(root, "SDMaterials");
-            filename = Path.Combine(mat, guid + ".png");
-
-            // If folders not already exists, create them
-            if (!Directory.Exists(root))
-                Directory.CreateDirectory(root);
-            if (!Directory.Exists(mat))
-                Directory.CreateDirectory(mat);
-
-            // If the file already exists, delete it
-            if (File.Exists(filename))
-                File.Delete(filename);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e.Message + "\n\n" + e.StackTrace);
-        }
-    }
-
-    /// <summary>
     /// Request an image generation to the Stable Diffusion server, asynchronously.
     /// </summary>
     /// <returns></returns>
@@ -164,7 +132,7 @@ public class StableDiffusionText2Material : StableDiffusionText2Image//StableDif
     {
         generating = true;
 
-        SetupFolders();
+        SetupFolders(StreamingAssetsFolder);
 
         // Set the model parameters
         yield return sdc.SetModelAsync(modelsList[selectedModel]);

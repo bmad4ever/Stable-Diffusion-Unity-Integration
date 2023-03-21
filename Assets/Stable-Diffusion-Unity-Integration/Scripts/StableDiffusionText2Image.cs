@@ -18,6 +18,8 @@ using UnityEditor.SceneManagement;
 [ExecuteAlways]
 public class StableDiffusionText2Image : StableDiffusionGenerator
 {
+    private const string StreamingAssetsFolder = "SDImages";
+
     [ReadOnly]
     public string guid = "";
 
@@ -132,7 +134,8 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     /// <summary>
     /// Setup the output path and filename for image generation
     /// </summary>
-    private void SetupFolders()
+    /// <param name="targetFolder">The folder name in streaming assets where the files are stored.</param>
+    protected void SetupFolders(string targetFolder = StreamingAssetsFolder)
     {
         // Get the configuration settings
         if (sdc == null)
@@ -144,7 +147,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
             string root = Application.dataPath + sdc.settings.OutputFolder;
             if (root == "" || !Directory.Exists(root))
                 root = Application.streamingAssetsPath;
-            string mat = Path.Combine(root, "SDImages");
+            string mat = Path.Combine(root, targetFolder);
             filename = Path.Combine(mat, guid + ".png");
 
             // If folders not already exists, create them
