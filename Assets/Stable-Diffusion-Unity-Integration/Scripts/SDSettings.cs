@@ -1,4 +1,7 @@
+using System;
+using System.Text;
 using UnityEngine;
+using UnityEngine.Networking;
 
 /// <summary>
 /// Data structure for specifying settings of Stable Diffusion server API or 
@@ -21,21 +24,47 @@ public class SDSettings : ScriptableObject
     public int steps = 35;
     public float cfgScale = 7;
     public long seed = -1;
-    
+
     [Header("API Settings")]
     public bool useAuth = false;
-    public string user = "";
-    public string pass = "";
-    
+    public string username = "";
+    public string password = "";
+    [SerializeField, HideInInspector] private string previousUsername = "";
+    [SerializeField, HideInInspector] private string previousPassword = "";
+    [SerializeField, HideInInspector] private string auth;
+
+    public string requestContentType = "application/json";
+    public string requestAccept = "application/json";
+
     [Header("URP Settings")]
     public bool useUniversalRenderPipeline = false;
+
+
+    public string Authorization => auth ??= BuildAuth();
+
+    private string BuildAuth()
+    {
+        auth = $"{username}:{password}";
+        auth = System.Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(auth));
+        auth = $"Basic {auth}";
+        return auth;
+    }
+
+    private void OnValidate()
+    {
+        //Build a new auth string if auth data has changed
+        if (previousUsername.Equals(username) && previousPassword.Equals(password))
+            return;
+        BuildAuth();
+    }
 }
 
 /// <summary>
 /// Data structure to easily serialize the parameters to send
 /// to the Stable Diffusion server when generating an image via Txt2Img.
 /// </summary>
-class SDParamsInTxt2Img
+[Serializable]
+public class SDParamsInTxt2Img
 {
     public bool enable_hr = false;
     public float denoising_strength = 0;
@@ -46,7 +75,7 @@ class SDParamsInTxt2Img
     public int hr_second_pass_steps = 0;
     public int hr_resize_x = 0;
     public int hr_resize_y = 0;
-    public string prompt = "";
+    [TextArea(1, 5)] public string prompt = "";
     public string[] styles = { "" };
     public long seed = -1;
     public long subseed = -1;
@@ -62,7 +91,7 @@ class SDParamsInTxt2Img
     public int height = 512;
     public bool restore_faces = false;
     public bool tiling = false;
-    public string negative_prompt = "";
+    [TextArea(1, 5)] public string negative_prompt = "";
     public float eta = 0;
     public float s_churn = 0;
     public float s_tmax = 0;
@@ -76,7 +105,8 @@ class SDParamsInTxt2Img
 /// Data structure to easily deserialize the data returned
 /// by the Stable Diffusion server after generating an image via Txt2Img.
 /// </summary>
-class SDParamsOutTxt2Img
+[Serializable]
+public class SDParamsOutTxt2Img
 {
     public bool enable_hr = false;
     public float denoising_strength = 0;
@@ -125,7 +155,7 @@ class SDParamsOutTxt2Img
 /// Data structure to easily serialize the parameters to send
 /// to the Stable Diffusion server when generating an image via Img2Img.
 /// </summary>
-class SDParamsInImg2Img
+public class SDParamsInImg2Img
 {
     public string[] init_images = { "" };
     public int resize_mode = 0;
@@ -176,7 +206,7 @@ class SDParamsInImg2Img
 /// Data structure to easily deserialize the data returned
 /// by the Stable Diffusion server after generating an image via Img2Img.
 /// </summary>
-class SDParamsOutImg2Img
+public class SDParamsOutImg2Img
 {
     public string[] init_images = { "" };
     public float resize_mode = 0;
@@ -235,11 +265,11 @@ class SDParamsOutImg2Img
 /// to the exception of the seed which will contain the value of the seed used 
 /// for the generation if you have used -1 for value (random).
 /// </summary>
-class SDResponseTxt2Img
+public class SDResponseTxt2Img
 {
     public string[] images;
     public SDParamsOutTxt2Img parameters;
-    public string info;
+    public SDParamsOutTxt2Img info;
 }
 
 /// <summary>
@@ -254,11 +284,11 @@ class SDResponseTxt2Img
 /// to the exception of the seed which will contain the value of the seed used 
 /// for the generation if you have used -1 for value (random).
 /// </summary>
-class SDResponseImg2Img
+public class SDResponseImg2Img
 {
     public string[] images;
     public SDParamsOutImg2Img parameters;
-    public string info;
+    public SDParamsOutTxt2Img info;
 }
 
 
@@ -266,9 +296,9 @@ class SDResponseImg2Img
 /// Data structure to help serialize into a JSON the model to be used by Stable Diffusion.
 /// This is to send along a Set Option API request to the server.
 /// </summary>
-class SDOption
+public record SDOption
 {
-    public string sd_model_checkpoint = "";
+    public string sd_model_checkpoint;
 }
 
 /// <summary>

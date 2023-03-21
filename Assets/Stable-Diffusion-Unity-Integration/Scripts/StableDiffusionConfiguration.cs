@@ -1,10 +1,5 @@
-using System;
-using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -14,7 +9,7 @@ using UnityEngine.Networking;
 [ExecuteInEditMode]
 public class StableDiffusionConfiguration : MonoBehaviour
 {
-    [SerializeField] 
+    [SerializeField]
     public SDSettings settings;
 
     [SerializeField]
@@ -55,40 +50,22 @@ public class StableDiffusionConfiguration : MonoBehaviour
     {
         // Stable diffusion API url for getting the models list
         string url = settings.StableDiffusionServerURL + settings.ModelsAPI;
-
         UnityWebRequest request = new UnityWebRequest(url, "GET");
-        request.downloadHandler = (DownloadHandler) new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/json");
-        
-        if (settings.useAuth && !settings.user.Equals("") && !settings.pass.Equals(""))
-        {
-            Debug.Log("Using API key to authenticate");
-            byte[] bytesToEncode = Encoding.UTF8.GetBytes(settings.user + ":" + settings.pass);
-            string encodedCredentials = Convert.ToBase64String(bytesToEncode);
-            request.SetRequestHeader("Authorization", "Basic " + encodedCredentials);
-        }
-        
+        request.SetupSDRequest<DownloadHandlerBuffer>(settings);
         yield return request.SendWebRequest();
 
-        try
+        if (request.result != UnityWebRequest.Result.Success)
         {
-            // Deserialize the response to a class
-            Model[] ms = JsonConvert.DeserializeObject<Model[]>(request.downloadHandler.text);
-
-            // Keep only the names of the models
-            List<string> modelsNames = new List<string>();
-
-            foreach (Model m in ms) 
-                modelsNames.Add(m.model_name);
-
-            // Convert the list into an array and store it for futur use
-            modelNames = modelsNames.ToArray();
+            Debug.Log(request.error);
+            yield break;
         }
-        catch (Exception)
-        {
-            Debug.Log(request.downloadHandler.text);
-            Debug.Log("Server needs and API key authentication. Please check your settings!");
-        }
+
+        //Get array of model names from retrieved data
+        Model[] ms = JsonUtility.FromJson<Model[]>(request.downloadHandler.text);
+        List<string> modelsNames = new List<string>();
+        foreach (Model m in ms)
+            modelsNames.Add(m.model_name);
+        modelNames = modelsNames.ToArray();
     }
 
     /// <summary>
@@ -105,52 +82,19 @@ public class StableDiffusionConfiguration : MonoBehaviour
         if (modelNames == null || modelNames.Length == 0)
             yield return ListModelsAsync();
 
-        try
+        // Tell Stable Diffusion to use the specified model using an HTTP POST request
+        var sd = new SDOption { sd_model_checkpoint = modelName };
+        using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {
-            // Tell Stable Diffusion to use the specified model using an HTTP POST request
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Method = "POST";
+            request.SetupSDRequest(settings, JsonUtility.ToJson(sd));
+            yield return request.SendWebRequest();
 
-            // add auth-header to request
-            if (settings.useAuth && !settings.user.Equals("") && !settings.pass.Equals(""))
+            if (request.result != UnityWebRequest.Result.Success)
             {
-                httpWebRequest.PreAuthenticate = true;
-                byte[] bytesToEncode = Encoding.UTF8.GetBytes(settings.user + ":" + settings.pass);
-                string encodedCredentials = Convert.ToBase64String(bytesToEncode);
-                httpWebRequest.Headers.Add("Authorization", "Basic " + encodedCredentials);
+                Debug.Log(request.error);
+                yield break;
             }
-            
-            // Write to the stream the JSON parameters to set a model
-            if (httpWebRequest != null)
-            {
-                using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-                {
-                    // Model to use
-                    SDOption sd = new SDOption();
-                    sd.sd_model_checkpoint = modelName;
-
-                    // Serialize into a JSON string
-                    string json = JsonConvert.SerializeObject(sd);
-
-                    // Send the POST request to the server
-                    streamWriter.Write(json);
-                }
-
-                // Get the response of the server
-                var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                {
-                    string result = streamReader.ReadToEnd();
-                    // We actually don't care about the response, we are not expecting anything particular
-                    // We do this only to make sure we don't return from this function until the server has given a response (processed the request)
-                }
-            }
-        }
-        catch (WebException e)
-        {
-            Debug.Log("Error: " + e.Message);
+            Debug.Log(request.result);
         }
     }
-
 }
