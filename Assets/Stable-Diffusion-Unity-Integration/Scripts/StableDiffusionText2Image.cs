@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using NaughtyAttributes;
 
 #if UNITY_EDITOR
 
@@ -25,27 +26,8 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
 
     public SDParamsInTxt2Img SD_Params;
 
-    /// <summary>
-    /// List of samplers to display as Drop-Down in the inspector
-    /// </summary>
-    [SerializeField]
-    public string[] samplersList
-    {
-        get
-        {
-            if (sdc == null)
-                sdc = GameObject.FindObjectOfType<StableDiffusionConfiguration>();
-            return sdc.samplers;
-        }
-    }
-
-    /// <summary>
-    /// Actual sampler selected in the drop-down list
-    /// </summary>
-    [HideInInspector]
-    public int selectedSampler = 0;
-
-    [HideInInspector] public long generatedSeed = -1;
+    [SerializeField, ReadOnly, AllowNesting] 
+    protected long generatedSeed = -1;
 
     protected string filename = "";
 
@@ -86,11 +68,11 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
                 SDSettings settings = sdc.settings;
                 if (settings != null)
                 {
-                    SD_Params.width = settings.width;
-                    SD_Params.height = settings.height;
-                    SD_Params.steps = settings.steps;
-                    SD_Params.cfg_scale = settings.cfgScale;
-                    SD_Params.seed = settings.seed;
+                    SD_Params.width = settings.sdDefaultParams.width;
+                    SD_Params.height = settings.sdDefaultParams.height;
+                    SD_Params.steps = settings.sdDefaultParams.steps;
+                    SD_Params.cfg_scale = settings.sdDefaultParams.cfgScale;
+                    SD_Params.seed = settings.sdDefaultParams.seed;
                     return;
                 }
             }
@@ -107,14 +89,10 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
 
     protected void OnValidate()
     {
-        // Clamp image dimensions values between 128 and 2048 pixels
-        if (SD_Params.width < 128) SD_Params.width = 128;
-        if (SD_Params.height < 128) SD_Params.height = 128;
-        if (SD_Params.width > 2048) SD_Params.width = 2048;
-        if (SD_Params.height > 2048) SD_Params.height = 2048;
+        SD_Params.EnforceSD_Constraints();
 
         // If not setup already, generate a GUID (Global Unique Identifier)
-        if (guid == "")
+        if (string.IsNullOrEmpty(guid))
             guid = Guid.NewGuid().ToString();
     }
 #endif
@@ -144,7 +122,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
         try
         {
             // Determine output path
-            string root = Application.dataPath + sdc.settings.OutputFolder;
+            string root = Application.dataPath + sdc.settings.outputFolder;
             if (root == "" || !Directory.Exists(root))
                 root = Application.streamingAssetsPath;
             string mat = Path.Combine(root, targetFolder);
@@ -173,10 +151,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     /// <returns>True if image generation was successful, false otherwise.</returns>
     protected UnityWebRequest.Result GenerateImage(out SDResponseTxt2Img sDResponseTxt2Img, bool logResult = false)
     {
-        UnityWebRequest request = new UnityWebRequest(sdc.settings.StableDiffusionServerURL + sdc.settings.TextToImageAPI, "POST");
-
-        if (selectedSampler >= 0 && selectedSampler < samplersList.Length)
-            SD_Params.sampler_name = samplersList[selectedSampler];
+        UnityWebRequest request = new UnityWebRequest(sdc.settings.apiEndpoints.TextToImage, "POST");
 
         request.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings, JsonUtility.ToJson(SD_Params));
         request.SendWebRequest();

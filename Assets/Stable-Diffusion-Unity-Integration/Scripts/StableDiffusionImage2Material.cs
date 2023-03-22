@@ -5,6 +5,7 @@ using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections.Generic;
+using NaughtyAttributes;
 
 #if UNITY_EDITOR
 
@@ -118,11 +119,11 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
                 SDSettings settings = sdc.settings;
                 if (settings == null)
                 {
-                    width = settings.width;
-                    height = settings.height;
-                    steps = settings.steps;
-                    cfgScale = settings.cfgScale;
-                    seed = settings.seed;
+                    width = settings.sdDefaultParams.width;
+                    height = settings.sdDefaultParams.height;
+                    steps = settings.sdDefaultParams.steps;
+                    cfgScale = settings.sdDefaultParams.cfgScale;
+                    seed = settings.sdDefaultParams.seed;
                     return;
                 }
             }
@@ -237,7 +238,7 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
         try
         {
             // Determine output path
-            string root = Application.dataPath + sdc.settings.OutputFolder;
+            string root = Application.dataPath + sdc.settings.outputFolder;
             if (root == "" || !Directory.Exists(root))
                 root = Application.streamingAssetsPath;
             string mat = Path.Combine(root, "SDMaterials");
@@ -280,7 +281,7 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
         Texture2D inputTexture2D = (Texture2D)inputTexture;
 
         SDResponseTxt2Img sDResponseTxt2Img;
-        using (UnityWebRequest request = new UnityWebRequest(sdc.settings.StableDiffusionServerURL + sdc.settings.ImageToImageAPI, "POST"))
+        using (UnityWebRequest request = new UnityWebRequest(sdc.settings.apiEndpoints.ImageToImage, "POST"))
         {
             byte[] inputImgBytes = inputTexture2D.EncodeToPNG();
             string inputImgString = Convert.ToBase64String(inputImgBytes);

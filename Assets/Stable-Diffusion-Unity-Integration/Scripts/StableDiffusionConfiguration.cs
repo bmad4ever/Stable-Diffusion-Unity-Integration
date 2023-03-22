@@ -49,7 +49,7 @@ public class StableDiffusionConfiguration : MonoBehaviour
     IEnumerator ListModelsAsync()
     {
         // Stable diffusion API url for getting the models list
-        string url = settings.StableDiffusionServerURL + settings.ModelsAPI;
+        string url = settings.apiEndpoints.Models;
         UnityWebRequest request = new UnityWebRequest(url, "GET");
         request.SetupSDRequest<DownloadHandlerBuffer>(settings);
         yield return request.SendWebRequest();
@@ -76,7 +76,7 @@ public class StableDiffusionConfiguration : MonoBehaviour
     public IEnumerator SetModelAsync(string modelName)
     {
         // Stable diffusion API url for setting a model
-        string url = settings.StableDiffusionServerURL + settings.OptionAPI;
+        string url = settings.apiEndpoints.Option;
 
         // Load the list of models if not filled already
         if (modelNames == null || modelNames.Length == 0)
