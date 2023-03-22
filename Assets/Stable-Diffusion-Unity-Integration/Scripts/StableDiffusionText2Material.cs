@@ -42,6 +42,9 @@ public class StableDiffusionText2Material : StableDiffusionText2Image
     {
         base.OnValidate();
 
+        if (material is null) return;
+        _material ??= material;
+        
         (bool differentNormalMapStrength, bool someOtherDifferentField) = material != _material;
 
         // Update normal map strength whenever the user modifies it in the inspector
