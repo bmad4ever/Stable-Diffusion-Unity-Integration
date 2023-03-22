@@ -36,7 +36,6 @@ public partial class StableDiffusionGenerator : MonoBehaviour
 
         public bool applyRecursively = true;
 
-
         public static (bool, bool) operator ==(SDGMaterialData m1, SDGMaterialData m2) =>
                 (m1.normalMapStrength == m2.normalMapStrength,
                 m1.metallic == m2.metallic &&
@@ -262,6 +261,15 @@ public partial class StableDiffusionGenerator : MonoBehaviour
                 Debug.LogError(e.Message + "\n\n" + e.StackTrace);
             }
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not SDGMaterialData data) return false;
+            (bool a, bool b) = this == data;
+            return a && b;
+        }
+
+        public override int GetHashCode() => HashCode.Combine(tilingX, tilingY, metallic, smoothness, normalMapStrength);
     }
 
 }

@@ -33,7 +33,7 @@ public partial class StableDiffusionGenerator : MonoBehaviour
     private IEnumerator UpdateGenerationProgressCoroutine()
     {
         // Stable diffusion API url for setting a model
-        string url = sdc.settings.StableDiffusionServerURL + sdc.settings.ProgressAPI;
+        string url = sdc.settings.apiEndpoints.Progress;
         using (UnityWebRequest modelInfoRequest = UnityWebRequest.Get(url))
         {
             modelInfoRequest.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings);

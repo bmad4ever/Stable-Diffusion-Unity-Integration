@@ -14,13 +14,10 @@ public class StableDiffusionText2MaterialEditor : Editor
 
         StableDiffusionText2Material myComponent = (StableDiffusionText2Material)target;
 
-        // Draw the drop-down list for the Samplers list
-        myComponent.selectedSampler = EditorGUILayout.Popup("Sampler", myComponent.selectedSampler, myComponent.samplersList);
-
         // Draw the drop-down list for the Models list
         myComponent.selectedModel = EditorGUILayout.Popup("Model", myComponent.selectedModel, myComponent.modelsList);
 
-        EditorGUILayout.LongField("Generated Seed", myComponent.generatedSeed);
+        //EditorGUILayout.LongField("Generated Seed", myComponent.generatedSeed);
 
         // Apply the changes to the serialized object
         serializedObject.ApplyModifiedProperties();

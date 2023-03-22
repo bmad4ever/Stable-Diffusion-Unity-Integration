@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using NaughtyAttributes;
 
 #if UNITY_EDITOR
 
@@ -89,11 +90,11 @@ public class StableDiffusionImage2Image : StableDiffusionGenerator
                 SDSettings settings = sdc.settings;
                 if (settings != null)
                 {
-                    width = settings.width;
-                    height = settings.height;
-                    steps = settings.steps;
-                    cfgScale = settings.cfgScale;
-                    seed = settings.seed;
+                    width = settings.sdDefaultParams.width;
+                    height = settings.sdDefaultParams.height;
+                    steps = settings.sdDefaultParams.steps;
+                    cfgScale = settings.sdDefaultParams.cfgScale;
+                    seed = settings.sdDefaultParams.seed;
                     return;
                 }
             }
@@ -107,7 +108,7 @@ public class StableDiffusionImage2Image : StableDiffusionGenerator
 #endif
     }
 
-    private void Update()
+    protected void OnValidate()
     {
 #if UNITY_EDITOR
         // Clamp image dimensions values between 128 and 2048 pixels
@@ -117,7 +118,7 @@ public class StableDiffusionImage2Image : StableDiffusionGenerator
         if (height > 2048) height = 2048;
 
         // If not setup already, generate a GUID (Global Unique Identifier)
-        if (guid == "")
+        if (string.IsNullOrEmpty(guid))
             guid = Guid.NewGuid().ToString();
 #endif
     }
@@ -154,7 +155,7 @@ public class StableDiffusionImage2Image : StableDiffusionGenerator
         try
         {
             // Determine output path
-            string root = Application.dataPath + sdc.settings.OutputFolder;
+            string root = Application.dataPath + sdc.settings.outputFolder;
             if (root == "" || !Directory.Exists(root))
                 root = Application.streamingAssetsPath;
             string mat = Path.Combine(root, "SDImages");
@@ -187,7 +188,7 @@ public class StableDiffusionImage2Image : StableDiffusionGenerator
 
         // Generate Image
         SDResponseImg2Img sDResponseImg2Img;
-        using (UnityWebRequest request = new UnityWebRequest(sdc.settings.StableDiffusionServerURL + sdc.settings.ImageToImageAPI, "POST"))
+        using (UnityWebRequest request = new UnityWebRequest(sdc.settings.apiEndpoints.ImageToImage, "POST"))
         {
             byte[] inputImgBytes = inputTexture.EncodeToPNG();
             string inputImgString = Convert.ToBase64String(inputImgBytes);
