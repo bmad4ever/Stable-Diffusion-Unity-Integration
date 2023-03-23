@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json;
+using UnityEditor;
 
 /// <summary>
 /// Global Stable Diffusion parameters configuration.
@@ -24,6 +26,7 @@ public class StableDiffusionConfiguration : MonoBehaviour
     /// <summary>
     /// Data structure that represents a Stable Diffusion model to help deserialize from JSON string.
     /// </summary>
+    [System.Serializable]
     class Model
     {
         public string title;
@@ -40,6 +43,12 @@ public class StableDiffusionConfiguration : MonoBehaviour
     public void ListModels()
     {
         StartCoroutine(ListModelsAsync());
+    }
+
+    [System.Serializable]
+    class SS
+    {
+        public Model[] models;
     }
 
     /// <summary>
@@ -61,7 +70,8 @@ public class StableDiffusionConfiguration : MonoBehaviour
         }
 
         //Get array of model names from retrieved data
-        Model[] ms = JsonUtility.FromJson<Model[]>(request.downloadHandler.text);
+        Debug.Log(request.downloadHandler.text);
+        Model[] ms = JsonConvert.DeserializeObject<Model[]>(request.downloadHandler.text);
         List<string> modelsNames = new List<string>();
         foreach (Model m in ms)
             modelsNames.Add(m.model_name);
@@ -86,15 +96,71 @@ public class StableDiffusionConfiguration : MonoBehaviour
         var sd = new SDOption { sd_model_checkpoint = modelName };
         using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {
-            request.SetupSDRequest(settings, JsonUtility.ToJson(sd));
+            request.SetupSDRequest(settings, JsonConvert.SerializeObject(sd));//JsonUtility.ToJson(sd));
             yield return request.SendWebRequest();
+
+            //TODO maybe in the future check load model %. 
+            //yield return ShowProgressAndWaitUntilDone(request, modelName);
 
             if (request.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log(request.error);
+                if (request.responseCode == 422) Debug.Log(JsonUtility.ToJson(sd));
                 yield break;
             }
             Debug.Log(request.result);
         }
     }
+
+
+
+
+    #region UNUSED, MAYBE IN THE FUTURE
+    private Coroutine _updateProgressRunning = null;
+    protected IEnumerator ShowProgressAndWaitUntilDone(UnityWebRequest request, string modelName)
+    {
+        //TODO, a workaround, this smells, maybe should place this somewhere else...
+        UpdateGenerationProgress(modelName);
+        while (!request.isDone)
+        {
+            yield return SDSettings.requestCompletionCheckDeltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Update a generation progress bar
+    /// </summary>
+    protected void UpdateGenerationProgress(string modelName)
+    {
+#if UNITY_EDITOR
+        if (_updateProgressRunning != null) return;
+        _updateProgressRunning = StartCoroutine(UpdateGenerationProgressCoroutine(modelName));
+#endif
+    }
+
+    private IEnumerator UpdateGenerationProgressCoroutine(string modelName)
+    {
+        // Stable diffusion API url for setting a model
+        string url = "";//???
+        float progress = 0f;
+
+        EditorUtility.DisplayProgressBar($"Changing model to {modelName}", "0%", 0);
+        yield return SDSettings.requestCompletionCheckDeltaTime;
+
+        while (progress < 100f)
+            using (UnityWebRequest modelInfoRequest = UnityWebRequest.Get(url))
+            {
+                modelInfoRequest.SetupSDRequest<DownloadHandlerBuffer>(settings);
+                yield return modelInfoRequest.SendWebRequest();
+
+                // Deserialize the response to a class
+                SDProgress sdp = JsonUtility.FromJson<SDProgress>(modelInfoRequest.downloadHandler.text);
+                progress = sdp.progress;
+
+                yield return SDSettings.requestCompletionCheckDeltaTime;
+                EditorUtility.DisplayProgressBar($"Changing model to {modelName}", progress + "%", progress);
+            }
+        _updateProgressRunning = null;
+    }
+    #endregion
 }

@@ -81,8 +81,7 @@ public class StableDiffusionText2Material : StableDiffusionText2Image
 
         // Set the model parameters
         yield return sdc.SetModelAsync(modelsList[selectedModel]);
-
-        UnityWebRequest.Result requestResult = GenerateImage(out SDResponseTxt2Img sDResponseTxt2Img);
+        yield return GenerateImage();
         if (requestResult is not UnityWebRequest.Result.Success)
         {
             Debug.Log(requestResult);

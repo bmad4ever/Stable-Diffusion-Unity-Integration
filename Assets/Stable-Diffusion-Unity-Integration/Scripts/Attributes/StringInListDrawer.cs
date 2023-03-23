@@ -43,13 +43,13 @@ public class StringInListDrawer : PropertyDrawer
         if (property.propertyType == SerializedPropertyType.String)
         {
             int index = Mathf.Max(0, Array.IndexOf(list, property.stringValue));
-            index = EditorGUI.Popup(position, property.displayName, index, list);
+            index = EditorGUI.Popup(position, label.text, index, list);
 
             property.stringValue = list[index];
         }
         else if (property.propertyType == SerializedPropertyType.Integer)
         {
-            property.intValue = EditorGUI.Popup(position, property.displayName, property.intValue, list);
+            property.intValue = EditorGUI.Popup(position, label.text, property.intValue, list);
         }
         else
         {

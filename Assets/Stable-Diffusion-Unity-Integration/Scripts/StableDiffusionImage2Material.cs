@@ -273,9 +273,6 @@ public class StableDiffusionImage2Material : StableDiffusionGenerator
         // Set the model parameters
         yield return sdc.SetModelAsync(modelsList[selectedModel]);
 
-        // Generate the image
-        HttpWebRequest httpWebRequest = null;
-
         MeshRenderer mr = GetMeshRenderer();
         inputTexture = mr.sharedMaterial.mainTexture;
         Texture2D inputTexture2D = (Texture2D)inputTexture;

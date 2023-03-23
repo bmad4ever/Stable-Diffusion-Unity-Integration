@@ -2,6 +2,7 @@ using NaughtyAttributes;
 using System;
 using System.ComponentModel;
 using System.Text;
+using Unity.EditorCoroutines.Editor;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -19,6 +20,12 @@ public class SDSettings : ScriptableObject
                     MAX_CFG_SCALE = 30,
                     MIN_SAMPLING_STEPS = 1,
                     MAX_SAMPLING_STEPS = 150;
+
+#if UNITY_EDITOR
+    public static readonly EditorWaitForSeconds requestCompletionCheckDeltaTime = new EditorWaitForSeconds(.75f);
+#else
+    public static readonly WaitForSecondsRealtime requestCompletionCheckDeltaTime = new WaitForSecondsRealtime(.75f);
+#endif
     #endregion
 
     // TODO try to use InspectorName instead, as it is already defined in Unity
@@ -134,15 +141,15 @@ public class SDSettings : ScriptableObject
 [Serializable]
 public class SDParamsInTxt2Img
 {
-    [Label("Highres fix"), ToggleLeft, AllowNesting] public bool enable_hr = false;
+    [Label("Highres fix"), AllowNesting, ToggleLeft] public bool enable_hr = false;
 
     [Label("Upscale by"), MinValue(1), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting]
     public float hr_scale = 2;
 
-    [Label("Resize width to"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting] 
+    [Label("Resize W"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting, Tooltip("Resize width to\n(will take priority over upscale value)"), Range(0, SDSettings.MAX_SIDE_LENGHT_IN_PIXELS)] 
     public int hr_resize_x = 0;
 
-    [Label("Resize height to"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting]
+    [Label("Resize H"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting, Tooltip("Resize height to\n(will take priority over upscale value)"), Range(0, SDSettings.MAX_SIDE_LENGHT_IN_PIXELS)]
     public int hr_resize_y = 0;
 
     public int firstphase_width = 0; //???
@@ -151,10 +158,10 @@ public class SDParamsInTxt2Img
     [Label("Upscaler"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting] 
     public string hr_upscaler = "";
 
-    [Label("Hires steps"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting] 
+    [Label("Steps"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting, Range(SDSettings.MIN_SAMPLING_STEPS, SDSettings.MAX_SAMPLING_STEPS), Tooltip("Highres Steps")] 
     public int hr_second_pass_steps = 0;
 
-    [Label("Denoising strength"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting, Range(0f, 1.0f)]
+    [Label("Denoising"), ShowIf("enable_hr"), EnableIf("enable_hr"), AllowNesting, Range(0f, 1.0f), Tooltip("Denoising Strength")]
     public float denoising_strength = 0.75f;
 
 
@@ -167,16 +174,16 @@ public class SDParamsInTxt2Img
     public int seed_resize_from_h = -1;
     public int seed_resize_from_w = -1;
 
-    [StringInEnumDesc(typeof(SDSettings.DefaultSamplers))]
+    [Label("Sampling method"), AllowNesting, StringInEnumDesc(typeof(SDSettings.DefaultSamplers))]
     public string sampler_name = "Euler a";
 
-    [Label("Batch size"), Range(1, 8)] public int batch_size = 1;
-    [Label("Batch count"), Range(1, 10)] public int n_iter = 1;
+    [Label("Batch Size"), AllowNesting, Range(1, 8)] public int batch_size = 1;
+    [Label("Batch Count"), AllowNesting, Range(1, 10)] public int n_iter = 1;
 
     [Range(SDSettings.MIN_SAMPLING_STEPS, SDSettings.MAX_SAMPLING_STEPS)]
     public int steps = 50;
 
-    [Label("CFG scale"), Range(SDSettings.MIN_CFG_SCALE, SDSettings.MAX_CFG_SCALE)]
+    [Label("CFG scale"), AllowNesting, Range(SDSettings.MIN_CFG_SCALE, SDSettings.MAX_CFG_SCALE)]
     public float cfg_scale = 7;
 
     [Range(SDSettings.MIN_SIDE_LENGHT_IN_PIXELS, SDSettings.MAX_SIDE_LENGHT_IN_PIXELS)]
@@ -185,7 +192,7 @@ public class SDParamsInTxt2Img
     [Range(SDSettings.MIN_SIDE_LENGHT_IN_PIXELS, SDSettings.MAX_SIDE_LENGHT_IN_PIXELS)]
     public int height = 512;
 
-    [Label("Restore faces"), ToggleLeft] public bool restore_faces = false;
+    [Label("Restore faces"), AllowNesting, ToggleLeft] public bool restore_faces = false;
     [ToggleLeft] public bool tiling = false;
 
     [TextArea(1, 5)] public string negative_prompt = "";

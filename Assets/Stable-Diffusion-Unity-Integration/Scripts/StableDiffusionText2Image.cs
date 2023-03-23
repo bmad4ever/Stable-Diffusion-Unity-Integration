@@ -26,8 +26,8 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
 
     public SDParamsInTxt2Img SD_Params;
 
-    [SerializeField, ReadOnly, AllowNesting] 
-    protected long generatedSeed = -1;
+    [ReadOnly, AllowNesting] 
+    public long generatedSeed = -1;
 
     protected string filename = "";
 
@@ -53,6 +53,8 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
 
     // Internally keep tracking if we are currently generating (prevent re-entry)
     protected bool generating = false;
+    public bool Generating => generating;
+
 
 #if UNITY_EDITOR
     /// <summary>
@@ -149,25 +151,23 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
     /// </summary>
     /// <param name="sDResponseTxt2Img"></param>
     /// <returns>True if image generation was successful, false otherwise.</returns>
-    protected UnityWebRequest.Result GenerateImage(out SDResponseTxt2Img sDResponseTxt2Img, bool logResult = false)
+    protected IEnumerator GenerateImage(bool logResult = true)
     {
         UnityWebRequest request = new UnityWebRequest(sdc.settings.apiEndpoints.TextToImage, "POST");
 
         request.SetupSDRequest<DownloadHandlerBuffer>(sdc.settings, JsonUtility.ToJson(SD_Params));
         request.SendWebRequest();
 
-        ShowProgressAndWaitUntilDone(request);
-
-        if (request.result is not UnityWebRequest.Result.Success)
-        {
-            sDResponseTxt2Img = null;
-            return request.result;
-        }
+        yield return ShowProgressAndWaitUntilDone(request);
 
         if(logResult) Debug.Log(request.result);
+        requestResult = request.result;
         sDResponseTxt2Img = JsonUtility.FromJson<SDResponseTxt2Img>(request.downloadHandler.text);
-        return request.result;
+        yield break;
     }
+
+    protected SDResponseTxt2Img sDResponseTxt2Img;
+    protected UnityWebRequest.Result requestResult;
 
     protected virtual IEnumerator GenerateAsync()
     {
@@ -177,8 +177,7 @@ public class StableDiffusionText2Image : StableDiffusionGenerator
 
         // Set the model parameters
         yield return sdc.SetModelAsync(modelsList[selectedModel]);
-
-        UnityWebRequest.Result requestResult = GenerateImage(out SDResponseTxt2Img sDResponseTxt2Img);
+        yield return GenerateImage();
         if (requestResult is not UnityWebRequest.Result.Success)
         {
             Debug.Log(requestResult);

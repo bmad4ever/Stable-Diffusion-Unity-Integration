@@ -14,7 +14,7 @@ static class UnityWebRequestExtensions
     /// <returns>The value of useAuth in the provided settings.</returns>
     public static bool SetupSDRequest(this UnityWebRequest request, SDSettings sdSettings, string requestBody = null, DownloadHandler setupHandler = null)
     {
-        request.SetRequestHeader("ContentType", sdSettings.requestSettings.requestContentType);
+        request.SetRequestHeader("Content-Type", sdSettings.requestSettings.requestContentType);
         request.downloadHandler = setupHandler;
         if (setupHandler is not null) request.SetRequestHeader("Accept", sdSettings.requestSettings.requestAccept);
         if (requestBody is not null) request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestBody));
